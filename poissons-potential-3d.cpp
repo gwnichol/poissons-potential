@@ -27,6 +27,7 @@ int main(int argc, char* argv[])
 		sNum << argv[9];
 		sNum >> Num;
 	}
+	
 	sN >> N;
 	sTop >> Top;
 	sRight >> Right;
@@ -35,8 +36,10 @@ int main(int argc, char* argv[])
 	sFront >> Front;
 	sBack >> Back;
 
+	if( N < 4){std::cout << "N must be greater than three!\n"; return(1);}
+
 	/* Phi vector initialization	*/
-	std::vector<double_vec_vec> phi(N+1,double_vec_vec(N+1, double_vec(N+1,0)));	
+	std::vector<double_vec_vec> phi(N+1,double_vec_vec(N+1, double_vec(N+1,0)));
 	for(int k = 1; k < N; k++){
 		for(int i = 0; i < N+1; i++){
 			phi[i][k][N] = Top;
