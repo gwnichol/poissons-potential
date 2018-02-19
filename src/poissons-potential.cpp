@@ -5,7 +5,7 @@
 #include <vector> /* Using vectors instead of arrays */
 #include <sstream>
 #include <fstream>
-#include <cstring>
+#include <string>
 typedef std::vector<double> double_vec; /* Simplification of code */
 typedef std::vector<double_vec> double_vec_vec;
 
@@ -48,19 +48,19 @@ int main(int argc, char* argv[])
 
 	/*	Argument Handling (Needs Improvemnt)	*/
 	for (int i = 0; i < argc; i++){
-		if((std::strcmp(argv[i], "-3D") == 0) || (std::strcmp(argv[i], "--3demensions") == 0)){
+		if((std::string(argv[i]) == "3D") || (std::string(argv[i]) == "--3demensions")){
 			CUBE = 1;
 		}
-		if((std::strcmp(argv[i], "-Ef") == 0) || (std::strcmp(argv[i], "--field") == 0)){
+		if((std::string(argv[i]) == "-Ef") || (std::string(argv[i]) == "--field")){
 			EFIELD = 1;
 		}
 	}
 	for (int i = 0; i < argc; i++){
-		if((std::strcmp(argv[i], "-h") == 0) || (std::strcmp(argv[i], "--help") == 0)){
+		if((std::string(argv[i]) == "-h") || (std::string(argv[i]) == "--help")){
 			std::cout << "This program uses Poisson's equation to map potential in 2-space when given boundary conditions\nIt can then output an electric field aproximation if desired\n";
 			print_help_text(argv[0]);
 			return 1;
-		} else if ((std::strcmp(argv[i], "-s") == 0) || (std::strcmp(argv[i], "--size") == 0)){
+		} else if ((std::string(argv[i]) == "-s") || (std::string(argv[i]) == "--size")){
 			if(i + 1 < argc){
 				std::stringstream sN;
 				sN << argv[i + 1];
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 				print_help_text(argv[0]);
 				return 1;
 			}
-		} else if ((std::strcmp(argv[i], "-c") == 0) || (std::strcmp(argv[i], "--count") == 0)){
+		} else if ((std::string(argv[i]) == "-c") || (std::string(argv[i]) == "--count")){
 			if(i + 1 < argc){
 				std::stringstream sNum;
 				sNum << argv[i + 1];
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 				print_help_text(argv[0]);
 				return 1;
 			}
-		} else if ((std::strcmp(argv[i], "-b") == 0) || (std::strcmp(argv[i], "--boundaries") == 0)){
+		} else if ((std::string(argv[i]) == "-b") || (std::string(argv[i]) == "--boundaries")){
 			if( i + 4 < argc){
 				std::stringstream sTop, sRight, sBottom, sLeft;
 				sTop << argv[i + 1];
@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 				print_help_text(argv[0]);
 				return 1;
 			}
-		} else if ((std::strcmp(argv[i], "-f") == 0) || (std::strcmp(argv[i], "--datafile") == 0)){
+		} else if ((std::string(argv[i]) == "-f") || (std::string(argv[i]) == "--datafile")){
 			if(i + 1 < argc){
 				filename = argv[i + 1];
 			} else {
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 				print_help_text(argv[0]);
 				return 1;
 			}
-		} else if((std::strcmp(argv[i], "-l") == 0) || (std::strcmp(argv[i], "--length") == 0)){
+		} else if((std::string(argv[i]) == "-l") || (std::string(argv[i]) == "--length")){
 			if(i + 1 < argc){
 				std::stringstream sLength;
 				sLength << argv[i + 1];
