@@ -1,11 +1,11 @@
 /*
  * */
 
-#include <iostream>
+#include <iostream> /* System IO */
 #include <vector> /* Using vectors instead of arrays */
-#include <sstream>
-#include <fstream>
-#include <string>
+#include <fstream> /* Data file output */
+#include <string> /* Argument Handling */
+
 typedef std::vector<double> double_vec; /* Simplification of code */
 typedef std::vector<double_vec> double_vec_vec;
 
@@ -61,45 +61,48 @@ int main(int argc, char* argv[])
 			print_help_text(argv[0]);
 			return 1;
 		} else if ((std::string(argv[i]) == "-s") || (std::string(argv[i]) == "--size")){
-			if(i + 1 < argc){
-				std::stringstream sN;
-				sN << argv[i + 1];
-				sN >> N;
+			if (i + 1 < argc)
+			{
+				try 
+				{
+					N = std::stoi( argv[i + 1], nullptr );
 				}
-			if(not (i + 1 < argc) || (N < 3)){
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Unable to convert, " << argv[i + 1] << ", into an integer!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
+			}
+			if (not (i + 1 < argc) || (N < 3))
+			{
 				std::cout << "Argument, " << argv[i] << ", needs an integer size value greater than 2.\n";
-				print_help_text(argv[0]);
+				print_help_text( argv[0] );
 				return 1;
 			}
-		} else if ((std::string(argv[i]) == "-c") || (std::string(argv[i]) == "--count")){
+		} 
+		else if ((std::string(argv[i]) == "-c") || (std::string(argv[i]) == "--count"))
+		{
 			if(i + 1 < argc){
-				std::stringstream sNum;
-				sNum << argv[i + 1];
-				sNum >> Num;
+				try 
+				{
+					Num = std::stoi( argv[i + 1], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Unable to convert, " << argv[i + 1] << ", into an integer!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
 			}
 			if( not (i + 1 < argc) || (Num < 1)){
 				std::cout << "Argument,  " << argv[i] << ", needs an integer iteration count.\n";
 				print_help_text(argv[0]);
 				return 1;
 			}
-		} else if ((std::string(argv[i]) == "-b") || (std::string(argv[i]) == "--boundaries")){
-			if( i + 4 < argc){
-				std::stringstream sTop, sRight, sBottom, sLeft;
-				sTop << argv[i + 1];
-				sRight << argv[i + 2];
-				sBottom << argv[i + 3];
-				sLeft << argv[i + 4];
-				sTop >> Top;
-				sBottom >> Bottom;
-				sLeft >> Left;
-				sRight >> Right;
-				if((i + 6 < argc) & (CUBE)){
-					std::stringstream sFront, sBack;
-					sFront << argv[i + 5];
-					sBack << argv[i + 6];
-					sFront >> Front;
-					sBack >> Back;
-				}}
+		} 
+		else if ( (std::string( argv[i] ) == "-b") || (std::string(argv[i]) == "--boundaries") )
+		{
 			if((not (i + 6 < argc)) && (CUBE)){
 				std::cout << "Argument, " <<  argv[i] << ", need six integer boundary values directly following it when 3D is active.\n";
 				print_help_text(argv[0]);
@@ -109,6 +112,74 @@ int main(int argc, char* argv[])
 				std::cout << "Argument, " << argv[i] << ", needs four integer boundary values directly following it.\n";
 				print_help_text(argv[0]);
 				return 1;
+			}		
+			if( i + 4 < argc)
+			{
+				try 
+				{
+					Top = std::stod( argv[i + 1], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					Right = std::stod( argv[i + 2], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 2] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					Bottom = std::stod( argv[i + 3], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 3] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					Left = std::stod( argv[i + 4], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 4] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				if((i + 6 < argc) & (CUBE))
+				{
+					try
+					{
+						Front = std::stod( argv[i + 5], nullptr);
+					}
+					catch ( const std::invalid_argument& ia)
+					{
+						std::cout << "Error: " << argv[i + 5] << " is not a number!\n";
+						print_help_text( argv[0] );
+						return 1;
+					}
+					try
+					{
+						Back = std::stod( argv[i + 6], nullptr);
+					}
+					catch ( const std::invalid_argument& ia)
+					{
+						std::cout << "Error: " << argv[i + 5] << " is not a number!\n";
+						print_help_text( argv[0] );
+						return 1;
+					}
+					i = i + 2;
+				}
+				i = i + 4;	
 			}
 		} else if ((std::string(argv[i]) == "-f") || (std::string(argv[i]) == "--datafile")){
 			if(i + 1 < argc){
@@ -120,9 +191,16 @@ int main(int argc, char* argv[])
 			}
 		} else if((std::string(argv[i]) == "-l") || (std::string(argv[i]) == "--length")){
 			if(i + 1 < argc){
-				std::stringstream sLength;
-				sLength << argv[i + 1];
-				sLength >> Length;
+				try
+				{
+					Length = std::stod( argv[i + 1], nullptr);
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
 			}
 			if( (not (i + 1 < argc)) || (Length == 0) ){
 				std::cout << "Argument, " << argv[i] << ", needs a number greater than zero following it.\n";
