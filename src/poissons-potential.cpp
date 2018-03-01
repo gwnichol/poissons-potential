@@ -5,6 +5,7 @@
 #include <vector> /* Using vectors instead of arrays */
 #include <fstream> /* Data file output */
 #include <string> /* Argument Handling */
+#include <cmath>
 
 typedef std::vector<double> double_vec; /* Simplification of code */
 typedef std::vector<double_vec> double_vec_vec;
@@ -28,31 +29,37 @@ int main(int argc, char* argv[])
 {
 	/*	Variable Initialization	*/
 
-	double Top, Right, Bottom, Left, Front, Back, Length, Delta;
+	double Top, Right, Bottom, Left, Front, Back, Length, Delta, object_scale, objectVal;
 	int N, Num;
-	std::string filename;
+	std::string filename, stlFile;
 	const double pi = 3.14159265359;
-	bool CUBE = 0, EFIELD = 0;
+	bool CUBE = 0, EFIELD = 0, STLOBJECT = 0;
 
 	/* Default Values */
-	Top = 1;
-	Right = 1;
-	Bottom = 1;
-	Left = 1;
-	Front = 1;
-	Back = 1;
+	Top = 0;
+	Right = 0;
+	Bottom = 0;
+	Left = 0;
+	Front = 0;
+	Back = 0;
 	N = 25;
 	Num = 100;
+	object_scale = (N + 1) / 4;
 	filename = "data.dat";
+	stlFile = "shape.stl";
 	Length = 1.0;
+	objectVal = 9;
 
 	/*	Argument Handling (Needs Improvemnt)	*/
 	for (int i = 0; i < argc; i++){
-		if((std::string(argv[i]) == "3D") || (std::string(argv[i]) == "--3demensions")){
+		if((std::string(argv[i]) == "-3D") || (std::string(argv[i]) == "--3demensions")){
 			CUBE = 1;
 		}
 		if((std::string(argv[i]) == "-Ef") || (std::string(argv[i]) == "--field")){
 			EFIELD = 1;
+		}
+		if((std::string(argv[i]) == "-stl") || (std::string(argv[i]) == "--stl-object")){
+			STLOBJECT = 1;
 		}
 	}
 	for (int i = 0; i < argc; i++){
@@ -73,6 +80,7 @@ int main(int argc, char* argv[])
 					print_help_text(argv[0]);
 					return 1;
 				}
+				object_scale = (N+1) / 4;
 			}
 			if (not (i + 1 < argc) || (N < 3))
 			{
@@ -207,10 +215,34 @@ int main(int argc, char* argv[])
 				print_help_text(argv[0]);
 				return 1;
 			}
+		} else if( (STLOBJECT) && ((std::string(argv[i]) == "-o") || (std::string(argv[i]) == "--stl-file"))){
+			if(i + 1 < argc){
+				stlFile = argv[i + 1];
+			} else {
+				std::cout << "Argument, " << argv[i] << ", needs a filename following it.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}
+		} else if( STLOBJECT & ((std::string(argv[i]) == "-r") || (std::string(argv[i]) == "--rescale"))){
+			if(i + 1 < argc){
+				try
+				{
+					object_scale = std::stod( argv[i + 1], nullptr);
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
+			} else {
+				std::cout << "Argument, " << argv[i] << ", needs a number following it.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}
 		}
 	}
 	
-	std::cout << "Initializing Vector\n";
 	/* Phi vector initialization	*/
 	if( not CUBE ){
 	/* --------------- 2D Creation ------------ */
@@ -263,7 +295,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	datafile.close();}
-	else{
+	else if(not(STLOBJECT)){
 	/* --------------------------------------------- */
 	/* ---------------- 3D Creation ---------------- */
 	
@@ -322,6 +354,132 @@ int main(int argc, char* argv[])
 		}
 	}
 	datafile.close();
+	} else if(STLOBJECT){ /* STL File Input ---------------------------------------*/
+		std::cout << "You chose to use an stl file\n";
+		std::ifstream file (stlFile, std::ios::in|std::ios::binary);
+		std::vector<std::vector<std::vector<bool>>> iter(N+1, std::vector<std::vector<bool>>(N+1, std::vector<bool>(N+1, 0)));
+		std::vector<double_vec_vec> phi(N+1,double_vec_vec(N+1, double_vec(N+1,0)));
+		char header[80];
+		uint32_t numT;
+		float normal[3];
+		float vertex[3];
+		uint16_t attrib;
+		if(file.is_open())
+        {
+                file.read(header,80);
+                file.read(reinterpret_cast<char *>(&numT), sizeof(numT));
+				std::vector<std::vector<std::vector<double>>> triangles(numT, std::vector<std::vector<double>>(3, std::vector<double>(3)));
+				for(int i = 0; i < numT; i++){
+					file.read(reinterpret_cast<char *>(&normal), sizeof(normal));
+					for(int j = 0; j < 3; j++){
+					file.read(reinterpret_cast<char *>(&vertex), sizeof(normal));
+					triangles[i][j][0] = vertex[0];
+					triangles[i][j][1] = vertex[1];
+					triangles[i][j][2] = vertex[2];
+					}
+					file.read(reinterpret_cast<char *>(&attrib), sizeof(attrib));
+				}
+        file.close();
+
+	double x_max, x_min, y_max, y_min, z_max, z_min = 0;
+	for(int i = 0; i < numT; i++){
+		for(int j = 0; j < 3; j++){
+			if(triangles[i][j][0] <= x_min){x_min = triangles[i][j][0];}
+			if(triangles[i][j][0] >= x_max){x_max = triangles[i][j][0];}
+			if(triangles[i][j][1] <= y_min){y_min = triangles[i][j][1];}
+			if(triangles[i][j][1] >= y_max){y_max = triangles[i][j][1];}
+			if(triangles[i][j][2] <= z_min){z_min = triangles[i][j][2];}
+			if(triangles[i][j][2] >= z_max){z_max = triangles[i][j][2];}
+		}
+	}
+	double dx, dy, dz;
+	double z_shift, y_shift, x_shift;
+	double rescale = 1;
+	dx = x_max - x_min;
+	dy = y_max - y_min;
+	dz = z_max - z_min;
+
+	x_shift = ((N+1)/2) - (dx/2);
+	y_shift = ((N+1)/2) - (dy/2);
+	z_shift = ((N+1)/2) - (dz/2);
+	
+	if((dx >= dy) & (dx >= dz)){rescale = 1/dx;}
+	else if((dy >= dx) & (dy >= dz)){rescale = 1/dy;}
+	else if((dz >= dy) & (dz >= dx)){rescale = 1/dz;}
+
+	for(int i = 0; i < numT; i++){
+		for(int j = 0; j < 3; j++){
+			if(x_min < 0){triangles[i][j][0] = triangles[i][j][0] - x_min;}
+			triangles[i][j][0] = rescale * object_scale * triangles[i][j][0];
+			if(y_min < 0){triangles[i][j][1] = triangles[i][j][1] - y_min;}
+			triangles[i][j][1] = rescale * object_scale * triangles[i][j][1];
+			if(z_min < 0){triangles[i][j][2] = triangles[i][j][2] - z_min;}
+			triangles[i][j][2] = rescale * object_scale * triangles[i][j][2];
+		}
+	}
+
+	double side_dx, side_dy, side_dz, side_len, side_x, side_y, side_z, hypo_x, hypo_y, hypo_z, hypo_len, hypo_dx, hypo_dy, hypo_dz;
+	for(int i = 0; i < numT; i++){
+		side_dx = (triangles[i][1][0] - triangles[i][0][0]);
+		side_dy = (triangles[i][1][1] - triangles[i][0][1]);
+		side_dz = (triangles[i][1][2] - triangles[i][0][2]);
+		side_len = std::pow((side_dx*side_dx + side_dy*side_dy + side_dz*side_dz),0.5);
+		
+		for(int side_t = 0; side_t < side_len; side_t++){
+			side_x = side_dx*(side_t/side_len) + triangles[i][0][0];
+			side_y = side_dy*(side_t/side_len) + triangles[i][0][1];
+			side_z = side_dy*(side_t/side_len) + triangles[i][0][2];
+			hypo_dx = (triangles[i][2][0] - side_x);
+			hypo_dy = (triangles[i][2][1] - side_y);
+			hypo_dz = (triangles[i][2][2] - side_z);
+
+			hypo_len = std::pow((hypo_dx*hypo_dx + hypo_dy*hypo_dy + hypo_dz*hypo_dz),0.5);
+			for(int hypo_t = 0; hypo_t < hypo_len; hypo_t++)
+			{
+				hypo_x = hypo_dx*(hypo_t/hypo_len) + side_x;
+				hypo_y = hypo_dy*(hypo_t/hypo_len) + side_y;
+				hypo_z = hypo_dz*(hypo_t/hypo_len) + side_z;
+				try{
+					iter.at(hypo_x).at(hypo_y).at(hypo_z) = 1;
+					phi.at(hypo_x).at(hypo_y).at(hypo_z) = objectVal;
+				}
+				catch(std::out_of_range){
+				}
+			}
+		}
+	}
+	/* Steping Action	*/
+	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
+	std::vector<double_vec_vec> phi_new(N+1,double_vec_vec(N+1, double_vec(N+1))); /* */
+	for(int count = 0; count < Num; count++){
+		for(int i = 1; i < N; i++){
+			for(int j = 1; j < N; j++){
+				for(int k = 1; k < N; k++){
+					if(iter[i][j][k]){
+					phi_new[i][j][k] = phi[i][j][k] + (omega / 6) * (phi[i+1][j][k] + phi_new[i-1][j][k] + phi[i][j+1][k] + phi_new[i][j-1][k] + phi[i][j][k+1] + phi_new[i][j][k-1] - 6 * phi[i][j][k]); /* Incorporates the third spacial demension */
+				}}
+			}
+		}
+		std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
+	}
+
+	/*	Data file output	*/
+	std::ofstream datafile;
+	datafile.open(filename);
+	datafile << "# This is a data file of potential over a plane\n";
+	datafile << "# Variables: N=" << N << ", Top=" << Top << ", Right=" << Right << ", Bottom=" << Bottom << ", Left=" << Left << ", Front=" << Front << ", Back=" << Back << ", cycles=" << Num << "\n";
+	datafile << "# Using: STLFile=" << stlFile << ", x_shift=" << x_shift << ", y_shift=" << y_shift << ", z_shift=" << z_shift << ", dx=" << dx << ", dy=" << dy << ", dz=" << dz << "\n\n";
+	datafile << "# X	Y	Z	V\n";
+	for(int i = x_shift; i < (x_shift + dx); i++){
+		for(int j = y_shift; j < (y_shift + dy); j++){
+			for(int k = z_shift; k < (z_shift + dz); k++){
+				datafile << i << "	" << j << "	" << k << "	" << phi[i][j][k] << "\n";
+			}
+		}
+		datafile << "\n";
+	}
+
+	} /* End of STL */
 	}
 	/* -------------------------------------------------- */
 	return 0;
