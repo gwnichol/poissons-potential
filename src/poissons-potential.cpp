@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 	Back = 0;
 	N = 25;
 	Num = 100;
-	object_scale = (N + 1) / 4;
+	object_scale = 0.25;
 	filename = "data.dat";
 	stlFile = "shape.stl";
 	Length = 1.0;
@@ -80,7 +80,6 @@ int main(int argc, char* argv[])
 					print_help_text(argv[0]);
 					return 1;
 				}
-				object_scale = (N+1) / 4;
 			}
 			if (not (i + 1 < argc) || (N < 3))
 			{
@@ -357,7 +356,7 @@ int main(int argc, char* argv[])
 	} else if(STLOBJECT){ /* STL File Input ---------------------------------------*/
 		std::cout << "You chose to use an stl file\n";
 		std::ifstream file (stlFile, std::ios::in|std::ios::binary);
-		std::vector<std::vector<std::vector<bool>>> iter(N+1, std::vector<std::vector<bool>>(N+1, std::vector<bool>(N+1, 0)));
+		std::vector<std::vector<std::vector<bool>>> iter(N+1, std::vector<std::vector<bool>>(N+1, std::vector<bool>(N+1, 1)));
 		std::vector<double_vec_vec> phi(N+1,double_vec_vec(N+1, double_vec(N+1,0)));
 		char header[80];
 		uint32_t numT;
@@ -369,7 +368,7 @@ int main(int argc, char* argv[])
                 file.read(header,80);
                 file.read(reinterpret_cast<char *>(&numT), sizeof(numT));
 				std::vector<std::vector<std::vector<double>>> triangles(numT, std::vector<std::vector<double>>(3, std::vector<double>(3)));
-				for(int i = 0; i < numT; i++){
+				for(unsigned int i = 0; i < numT; i++){
 					file.read(reinterpret_cast<char *>(&normal), sizeof(normal));
 					for(int j = 0; j < 3; j++){
 					file.read(reinterpret_cast<char *>(&vertex), sizeof(normal));
@@ -382,8 +381,8 @@ int main(int argc, char* argv[])
         file.close();
 
 	double x_max, x_min, y_max, y_min, z_max, z_min = 0;
-	for(int i = 0; i < numT; i++){
-		for(int j = 0; j < 3; j++){
+	for(unsigned int i = 0; i < numT; i++){
+		for(unsigned int j = 0; j < 3; j++){
 			if(triangles[i][j][0] <= x_min){x_min = triangles[i][j][0];}
 			if(triangles[i][j][0] >= x_max){x_max = triangles[i][j][0];}
 			if(triangles[i][j][1] <= y_min){y_min = triangles[i][j][1];}
@@ -406,20 +405,28 @@ int main(int argc, char* argv[])
 	if((dx >= dy) & (dx >= dz)){rescale = 1/dx;}
 	else if((dy >= dx) & (dy >= dz)){rescale = 1/dy;}
 	else if((dz >= dy) & (dz >= dx)){rescale = 1/dz;}
+	
+	dx = dx * rescale * object_scale * N;
+	dy = dy * rescale * object_scale * N;
+	dz = dz * rescale * object_scale * N;
 
-	for(int i = 0; i < numT; i++){
-		for(int j = 0; j < 3; j++){
+	x_shift = ((N+1)/2) - (dx/2);
+	y_shift = ((N+1)/2) - (dy/2);
+	z_shift = ((N+1)/2) - (dz/2);
+	
+	for(unsigned int i = 0; i < numT; i++){
+		for(unsigned int j = 0; j < 3; j++){
 			if(x_min < 0){triangles[i][j][0] = triangles[i][j][0] - x_min;}
-			triangles[i][j][0] = rescale * object_scale * triangles[i][j][0];
+			triangles[i][j][0] = rescale * object_scale * N * triangles[i][j][0] + x_shift;
 			if(y_min < 0){triangles[i][j][1] = triangles[i][j][1] - y_min;}
-			triangles[i][j][1] = rescale * object_scale * triangles[i][j][1];
+			triangles[i][j][1] = rescale * object_scale * N * triangles[i][j][1] + y_shift;
 			if(z_min < 0){triangles[i][j][2] = triangles[i][j][2] - z_min;}
-			triangles[i][j][2] = rescale * object_scale * triangles[i][j][2];
+			triangles[i][j][2] = rescale * object_scale * N * triangles[i][j][2] + z_shift;
 		}
 	}
 
 	double side_dx, side_dy, side_dz, side_len, side_x, side_y, side_z, hypo_x, hypo_y, hypo_z, hypo_len, hypo_dx, hypo_dy, hypo_dz;
-	for(int i = 0; i < numT; i++){
+	for(unsigned int i = 0; i < numT; i++){
 		side_dx = (triangles[i][1][0] - triangles[i][0][0]);
 		side_dy = (triangles[i][1][1] - triangles[i][0][1]);
 		side_dz = (triangles[i][1][2] - triangles[i][0][2]);
@@ -440,7 +447,7 @@ int main(int argc, char* argv[])
 				hypo_y = hypo_dy*(hypo_t/hypo_len) + side_y;
 				hypo_z = hypo_dz*(hypo_t/hypo_len) + side_z;
 				try{
-					iter.at(hypo_x).at(hypo_y).at(hypo_z) = 1;
+					iter.at(hypo_x).at(hypo_y).at(hypo_z) = 0;
 					phi.at(hypo_x).at(hypo_y).at(hypo_z) = objectVal;
 				}
 				catch(std::out_of_range){
@@ -470,9 +477,9 @@ int main(int argc, char* argv[])
 	datafile << "# Variables: N=" << N << ", Top=" << Top << ", Right=" << Right << ", Bottom=" << Bottom << ", Left=" << Left << ", Front=" << Front << ", Back=" << Back << ", cycles=" << Num << "\n";
 	datafile << "# Using: STLFile=" << stlFile << ", x_shift=" << x_shift << ", y_shift=" << y_shift << ", z_shift=" << z_shift << ", dx=" << dx << ", dy=" << dy << ", dz=" << dz << "\n\n";
 	datafile << "# X	Y	Z	V\n";
-	for(int i = x_shift; i < (x_shift + dx); i++){
-		for(int j = y_shift; j < (y_shift + dy); j++){
-			for(int k = z_shift; k < (z_shift + dz); k++){
+	for(int i = 0; i < N; i++){
+		for(int j = 0; j < N; j++){
+			for(int k = 0; k < N; k++){
 				datafile << i << "	" << j << "	" << k << "	" << phi[i][j][k] << "\n";
 			}
 		}
