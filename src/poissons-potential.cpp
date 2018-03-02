@@ -6,6 +6,7 @@
 #include <fstream> /* Data file output */
 #include <string> /* Argument Handling */
 #include <cmath>
+#include <ctime>
 
 typedef std::vector<double> double_vec; /* Simplification of code */
 typedef std::vector<double_vec> double_vec_vec;
@@ -584,11 +585,16 @@ int main(int argc, char* argv[])
 		datafile.close();
 		}}
 	std::cout << "Started Stepping\n";
-
+	long int start_time = static_cast<long int>(time(NULL));
+	long int left_time;
+	double progress;
 	/* Steping Action	*/
 	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
 	std::vector<double_vec_vec> phi_new(N+1,double_vec_vec(N+1, double_vec(N+1))); /* */
 	for(int count = 0; count < Num; count++){
+		progress = (double(count) + 1) / double(Num);
+		left_time = (static_cast<long int>(time(NULL)) - start_time) / progress;
+		std::cout << (progress * 100) << " % " << " | Time left: " << left_time << "s                                \r";
 		for(int i = 1; i < N; i++){
 			for(int j = 1; j < N; j++){
 				for(int k = 1; k < N; k++){
@@ -598,7 +604,9 @@ int main(int argc, char* argv[])
 			}
 		}
 		std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
+		std::cout.flush();
 	}
+	std::cout << "\n";
 
 	std::cout << "Writing to file\n";
 	/*	Data file output	*/
