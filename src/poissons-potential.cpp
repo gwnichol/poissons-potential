@@ -62,10 +62,6 @@ int main(int argc, char* argv[])
 	Back = 0;
 	N = 25;
 	Num = 100;
-<<<<<<< HEAD
-=======
-	object_scale = 0.25;
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
 	filename = "data.dat";
 	stlFile = "shape.stl";
 	Length = 1.0;
@@ -483,10 +479,6 @@ int main(int argc, char* argv[])
 	datafile.close();
 	} else if(STLOBJECT){ /* STL File Input ---------------------------------------*/
 		std::cout << "You chose to use an stl file\n";
-<<<<<<< HEAD
-=======
-		std::ifstream file (stlFile, std::ios::in|std::ios::binary);
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
 		std::vector<std::vector<std::vector<bool>>> iter(N+1, std::vector<std::vector<bool>>(N+1, std::vector<bool>(N+1, 1)));
 		std::vector<double_vec_vec> phi(N+1,double_vec_vec(N+1, double_vec(N+1,0)));
 		char header[80];
@@ -521,7 +513,6 @@ int main(int argc, char* argv[])
         file.close();
 		std::cout << "Finished reading STL\n";
 
-<<<<<<< HEAD
 		double x_max, x_min, y_max, y_min, z_max, z_min = 0;
 		for(unsigned int i = 0; i < numT; i++){
 			for(int j = 0; j < 3; j++){
@@ -532,17 +523,6 @@ int main(int argc, char* argv[])
 				if(triangles[i][j][2] <= z_min){z_min = triangles[i][j][2];}
 				if(triangles[i][j][2] >= z_max){z_max = triangles[i][j][2];}
 			}
-=======
-	double x_max, x_min, y_max, y_min, z_max, z_min = 0;
-	for(unsigned int i = 0; i < numT; i++){
-		for(unsigned int j = 0; j < 3; j++){
-			if(triangles[i][j][0] <= x_min){x_min = triangles[i][j][0];}
-			if(triangles[i][j][0] >= x_max){x_max = triangles[i][j][0];}
-			if(triangles[i][j][1] <= y_min){y_min = triangles[i][j][1];}
-			if(triangles[i][j][1] >= y_max){y_max = triangles[i][j][1];}
-			if(triangles[i][j][2] <= z_min){z_min = triangles[i][j][2];}
-			if(triangles[i][j][2] >= z_max){z_max = triangles[i][j][2];}
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
 		}
 		double dx, dy, dz;
 		double rescale = 1;
@@ -550,7 +530,6 @@ int main(int argc, char* argv[])
 		dy = y_max - y_min;
 		dz = z_max - z_min;
 	
-<<<<<<< HEAD
 		if((dx >= dy) & (dx >= dz)){rescale = 1/dx;}
 		else if((dy >= dx) & (dy >= dz)){rescale = 1/dy;}
 		else if((dz >= dy) & (dz >= dx)){rescale = 1/dz;}
@@ -568,46 +547,14 @@ int main(int argc, char* argv[])
 				if(z_min < 0){triangles[i][j][2] = triangles[i][j][2] - z_min;}
 				triangles[i][j][2] = N * rescale * objects[num_object].scale * triangles[i][j][2] + N * objects[num_object].z - dz/2;
 			}
-=======
-	if((dx >= dy) & (dx >= dz)){rescale = 1/dx;}
-	else if((dy >= dx) & (dy >= dz)){rescale = 1/dy;}
-	else if((dz >= dy) & (dz >= dx)){rescale = 1/dz;}
-	
-	dx = dx * rescale * object_scale * N;
-	dy = dy * rescale * object_scale * N;
-	dz = dz * rescale * object_scale * N;
-
-	x_shift = ((N+1)/2) - (dx/2);
-	y_shift = ((N+1)/2) - (dy/2);
-	z_shift = ((N+1)/2) - (dz/2);
-	
-	for(unsigned int i = 0; i < numT; i++){
-		for(unsigned int j = 0; j < 3; j++){
-			if(x_min < 0){triangles[i][j][0] = triangles[i][j][0] - x_min;}
-			triangles[i][j][0] = rescale * object_scale * N * triangles[i][j][0] + x_shift;
-			if(y_min < 0){triangles[i][j][1] = triangles[i][j][1] - y_min;}
-			triangles[i][j][1] = rescale * object_scale * N * triangles[i][j][1] + y_shift;
-			if(z_min < 0){triangles[i][j][2] = triangles[i][j][2] - z_min;}
-			triangles[i][j][2] = rescale * object_scale * N * triangles[i][j][2] + z_shift;
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
 		}
 
-<<<<<<< HEAD
 		double side_dx, side_dy, side_dz, side_len, side_x, side_y, side_z, hypo_x, hypo_y, hypo_z, hypo_len, hypo_dx, hypo_dy, hypo_dz;
 		for(unsigned int i = 0; i < numT; i++){
 			side_dx = (triangles[i][1][0] - triangles[i][0][0]);
 			side_dy = (triangles[i][1][1] - triangles[i][0][1]);
 			side_dz = (triangles[i][1][2] - triangles[i][0][2]);
 			side_len = std::pow((side_dx*side_dx + side_dy*side_dy + side_dz*side_dz),0.5);
-=======
-	double side_dx, side_dy, side_dz, side_len, side_x, side_y, side_z, hypo_x, hypo_y, hypo_z, hypo_len, hypo_dx, hypo_dy, hypo_dz;
-	for(unsigned int i = 0; i < numT; i++){
-		side_dx = (triangles[i][1][0] - triangles[i][0][0]);
-		side_dy = (triangles[i][1][1] - triangles[i][0][1]);
-		side_dz = (triangles[i][1][2] - triangles[i][0][2]);
-		side_len = std::pow((side_dx*side_dx + side_dy*side_dy + side_dz*side_dz),0.5);
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
-		
 			for(int side_t = 0; side_t < side_len; side_t++){
 				side_x = side_dx*(side_t/side_len) + triangles[i][0][0];
 				side_y = side_dy*(side_t/side_len) + triangles[i][0][1];
@@ -616,7 +563,6 @@ int main(int argc, char* argv[])
 				hypo_dy = (triangles[i][2][1] - side_y);
 				hypo_dz = (triangles[i][2][2] - side_z);
 
-<<<<<<< HEAD
 				hypo_len = std::pow((hypo_dx*hypo_dx + hypo_dy*hypo_dy + hypo_dz*hypo_dz),0.5);
 				for(int hypo_t = 0; hypo_t < hypo_len; hypo_t++)
 				{
@@ -629,19 +575,6 @@ int main(int argc, char* argv[])
 					}
 					catch(std::out_of_range){
 					}
-=======
-			hypo_len = std::pow((hypo_dx*hypo_dx + hypo_dy*hypo_dy + hypo_dz*hypo_dz),0.5);
-			for(int hypo_t = 0; hypo_t < hypo_len; hypo_t++)
-			{
-				hypo_x = hypo_dx*(hypo_t/hypo_len) + side_x;
-				hypo_y = hypo_dy*(hypo_t/hypo_len) + side_y;
-				hypo_z = hypo_dz*(hypo_t/hypo_len) + side_z;
-				try{
-					iter.at(hypo_x).at(hypo_y).at(hypo_z) = 0;
-					phi.at(hypo_x).at(hypo_y).at(hypo_z) = objectVal;
-				}
-				catch(std::out_of_range){
->>>>>>> fe82f76aa9f40b74d1ac7ac44050a42cc0482ec8
 				}
 			}	
 		}
@@ -683,3 +616,4 @@ int main(int argc, char* argv[])
 	/* -------------------------------------------------- */
 	return 0;
 }
+
