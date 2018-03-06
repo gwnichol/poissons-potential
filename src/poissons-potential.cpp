@@ -32,7 +32,14 @@ void print_help_text(char* arg){
 		<< "    * Takes arguments within braces\n"
 		<< "  -t,                 Sets the filename of STL File\n"
 		<< "  -s,                 Sets the scale of the file : 0 < s < 1\n"
-		<< "  -x, -y, -z          Sets the x, y, and z shift of the object : 0 < x,y,z < 1\n";
+		<< "  -x, -y, -z          Sets the x, y, and z shift of the object : 0 < x,y,z < 1\n"
+		<< "\n"
+		<< "  STL CUTTING\n"
+		<< "    * Usefull for cutting the computational time by 1/N however the third spacial\n"
+		<< "      cannot be incorporated.\n"
+		<< "  -xcut, --xcut\n"
+		<< "  -ycut, --ycut\n"
+		<< "  -zcut, --zcut\n";
 }
 
 struct STL {
@@ -48,11 +55,11 @@ int main(int argc, char* argv[])
 {
 	/*	Variable Initialization	*/
 
-	double Top, Right, Bottom, Left, Front, Back, Length, Delta;
+	double Top, Right, Bottom, Left, Front, Back, Length, Delta, xcut, ycut, zcut;
 	int N, Num;
 	std::string filename, stlFile;
 	const double pi = 3.14159265359;
-	bool CUBE = 0, EFIELD = 0, STLOBJECT = 0;
+	bool CUBE = 0, EFIELD = 0, STLOBJECT = 0, XCUT = 0, YCUT = 0, ZCUT = 0;
 
 	/* Default Values */
 	Top = 0;
@@ -361,14 +368,65 @@ int main(int argc, char* argv[])
 				} else {
 				}
 			}
+		} else if((STLOBJECT) & ((std::string(argv[i]) == "-xcut") || (std::string(argv[i]) == "--xcut"))){
+			XCUT = 1;
+			if( i + 1 < argc ){
+				try
+				{
+					xcut = std::stod( argv[i + 1], nullptr);
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
+			} else {
+				std::cout << "Argument, " << argv[i] << ", needs a number greater than zero and less than one following it.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}
+		} else if((STLOBJECT) & ((std::string(argv[i]) == "-ycut") || (std::string(argv[i]) == "--ycut"))){
+			YCUT = 1;
+			if( i + 1 < argc ){
+				try
+				{
+					ycut = std::stod( argv[i + 1], nullptr);
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
+			} else {
+				std::cout << "Argument, " << argv[i] << ", needs a number greater than zero and less than one following it.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}
+		} else if((STLOBJECT) & ((std::string(argv[i]) == "-zcut") || (std::string(argv[i]) == "--zcut"))){
+			ZCUT = 1;
+			if( i + 1 < argc ){
+				try
+				{
+					zcut = std::stod( argv[i + 1], nullptr);
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text(argv[0]);
+					return 1;
+				}
+			} else {
+				std::cout << "Argument, " << argv[i] << ", needs a number greater than zero and less than one following it.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}
 		}
-
-
-
 	}
 	
 	/* Phi vector initialization	*/
-	if( not CUBE ){
+	if((not CUBE) & (not STLOBJECT)){
 	/* --------------- 2D Creation ------------ */
 	std::vector<double_vec> phi(N+1,double_vec(N+1, 0));
 	for(int i = 0; i < N+1; i++){
@@ -382,7 +440,7 @@ int main(int argc, char* argv[])
 	/* Steping Action	*/
 
 	const double omega = 2 / (1 + pi / N); /* Used as a relaxation constant */
-	std::vector<double_vec> phi_new(N+1,double_vec(N+1)); /* */
+	std::vector<double_vec> phi_new(phi); /* */
 	for(int count = 0; count < Num; count++){
 		for(int i = 1; i < N; i++){
 			for(int j = 1; j < N; j++){
@@ -418,8 +476,8 @@ int main(int argc, char* argv[])
 			datafile << "\n";
 		}
 	}
-	datafile.close();}
-	else if(not(STLOBJECT)){
+	datafile.close();
+	} else if(not(STLOBJECT)){
 	/* --------------------------------------------- */
 	/* ---------------- 3D Creation ---------------- */
 	
@@ -436,7 +494,7 @@ int main(int argc, char* argv[])
 
 	/* Steping Action	*/
 	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
-	std::vector<double_vec_vec> phi_new(N+1,double_vec_vec(N+1, double_vec(N+1))); /* */
+	std::vector<double_vec_vec> phi_new(phi); /* */
 	for(int count = 0; count < Num; count++){
 		for(int i = 1; i < N; i++){
 			for(int j = 1; j < N; j++){
@@ -555,7 +613,7 @@ int main(int argc, char* argv[])
 			side_dx = (triangles[i][1][0] - triangles[i][0][0]);
 			side_dy = (triangles[i][1][1] - triangles[i][0][1]);
 			side_dz = (triangles[i][1][2] - triangles[i][0][2]);
-			side_len = std::pow((side_dx*side_dx + side_dy*side_dy + side_dz*side_dz),0.5);
+			side_len = side_dx*side_dx + side_dy*side_dy + side_dz*side_dz * 2;
 			for(int side_t = 0; side_t < side_len; side_t++){
 				side_x = side_dx*(side_t/side_len) + triangles[i][0][0];
 				side_y = side_dy*(side_t/side_len) + triangles[i][0][1];
@@ -564,7 +622,11 @@ int main(int argc, char* argv[])
 				hypo_dy = (triangles[i][2][1] - side_y);
 				hypo_dz = (triangles[i][2][2] - side_z);
 
-				hypo_len = std::pow((hypo_dx*hypo_dx + hypo_dy*hypo_dy + hypo_dz*hypo_dz),0.5);
+
+
+
+
+				hypo_len = hypo_dx*hypo_dx + hypo_dy*hypo_dy + hypo_dz*hypo_dz * 2;
 				for(int hypo_t = 0; hypo_t < hypo_len; hypo_t++)
 				{
 					hypo_x = hypo_dx*(hypo_t/hypo_len) + side_x;
@@ -581,20 +643,109 @@ int main(int argc, char* argv[])
 		}
 		std::ofstream datafile;
 		datafile.open(filename, std::ofstream::app);
-		datafile << "# Using: STLFile=" << objects[num_object].name << ", x_shift=" << N * objects[num_object].x << ", y_shift=" << N * objects[num_object].y << ", z_shift=" << N * objects[num_object].z << ", dx=" << dx << ", dy=" << dy << ", dz=" << dz << "\n\n";
+		datafile << "# Using: STLFile=" << objects[num_object].name << ", x_shift=" << N * objects[num_object].x << ", y_shift=" << N * objects[num_object].y << ", z_shift=" << N * objects[num_object].z << ", dx=" << dx << ", dy=" << dy << ", dz=" << dz << "\n";
 		datafile.close();
 		}}
+
+	if(XCUT){
+		const double omega = 2 / (1 + pi / N); /* Used as a relaxation constant */
+		std::vector<double_vec_vec> phi_new(phi); /* */
+		double x = N * xcut;
+		for(int count = 0; count < Num; count++){
+			for(int i = 1; i < N; i++){
+				for(int j = 1; j < N; j++){
+					if(iter[x][i][j]){
+						phi_new[x][i][j] = phi[x][i][j] + (omega / 4) * (phi[x][i+1][j] + phi_new[x][i-1][j] + phi[x][i][j+1] + phi_new[x][i][j-1] - 4 * phi[x][i][j]);
+						}
+				}
+			}
+			std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
+		}
+
+		std::ofstream datafile;
+		datafile.open(filename, std::ofstream::app);
+		datafile << "# Cut before iterations at X = " << static_cast<int>(x) << "\n\n";
+		datafile << "# Y	Z	V\n";
+		for(int i = 0; i < N+1; i++){
+			for(int j = 0; j < N+1; j++){
+				datafile << i << "	" << j << "	" << phi[x][i][j] << "\n";
+			}
+			datafile << "\n";
+		}
+		datafile.close();
+	} else if (YCUT){
+		const double omega = 2 / (1 + pi / N); /* Used as a relaxation constant */
+		std::vector<double_vec_vec> phi_new(phi); /* */
+		double y = N * ycut;
+		for(int count = 0; count < Num; count++){
+			for(int i = 1; i < N; i++){
+				for(int j = 1; j < N; j++){
+					if(iter[i][y][j]){
+						phi_new[i][y][j] = phi[i][y][j] + (omega / 4) * (phi[i+1][y][j] + phi_new[i-1][y][j] + phi[i][y][j+1] + phi_new[i][y][j-1] - 4 * phi[i][y][j]);
+						}
+				}
+			}
+			std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
+		}
+
+		std::ofstream datafile;
+		datafile.open(filename, std::ofstream::app);
+		datafile << "# Cut before iterations at Y = " << static_cast<int>(y) << "\n\n";
+		datafile << "# X	Z	V\n";
+		for(int i = 0; i < N+1; i++){
+			for(int j = 0; j < N+1; j++){
+				datafile << i << "	" << j << "	" << phi[i][y][j] << "\n";
+			}
+			datafile << "\n";
+		}
+		datafile.close();
+
+	} else if (ZCUT){
+		const double omega = 2 / (1 + pi / N); /* Used as a relaxation constant */
+		std::vector<double_vec_vec> phi_new(phi); /* */
+		double z = N * zcut;
+		for(int count = 0; count < Num; count++){
+			for(int i = 1; i < N; i++){
+				for(int j = 1; j < N; j++){
+					if(iter[i][j][z]){
+					phi_new[i][j][z] = phi[i][j][z] + (omega / 4) * (phi[i+1][j][z] + phi_new[i-1][j][z] + phi[i][j+1][z] + phi_new[i][j-1][z] - 4 * phi[i][j][z]);
+					}
+				}
+			}
+			std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
+		}
+
+		std::ofstream datafile;
+		datafile.open(filename, std::ofstream::app);
+		datafile << "# Cut at before iteration at Z = " << static_cast<int>(z) << "\n\n";
+		datafile << "# X	Y	V\n";
+		for(int i = 0; i < N+1; i++){
+			for(int j = 0; j < N+1; j++){
+				datafile << i << "	" << j << "	" << phi[i][j][z] << "\n";
+			}
+			datafile << "\n";
+		}
+		datafile.close();
+
+	} else {
 	std::cout << "Started Stepping\n";
 	long int start_time = static_cast<long int>(time(NULL));
-	long int left_time;
-	double progress;
+	long int left_time, time_elapsed;
+	long int lhours, lminutes, lseconds;
+	double progress, hours, minutes;
 	/* Steping Action	*/
 	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
-	std::vector<double_vec_vec> phi_new(N+1,double_vec_vec(N+1, double_vec(N+1))); /* */
+	std::vector<double_vec_vec> phi_new(phi); /* */
 	for(int count = 0; count < Num; count++){
 		progress = (double(count) + 1) / double(Num);
-		left_time = (static_cast<long int>(time(NULL)) - start_time) / progress;
-		std::cout << (progress * 100) << " % " << " | Time left: " << left_time << "s                                \r";
+		time_elapsed = static_cast<long int>(time(NULL)) - start_time;
+		left_time = ((time_elapsed) / progress) -  time_elapsed;
+		hours = static_cast<double>(left_time) / 60 / 60;
+		lhours = hours;
+		minutes = (hours - static_cast<double>(lhours)) * 60;
+		lminutes = minutes;
+		lseconds = (minutes - static_cast<double>(lminutes)) * 60;
+		std::cout << (progress * 100) << " % " << " | Time left: " << lhours << "h " << lminutes << "m " << lseconds << "s                                \r";
 		for(int i = 1; i < N; i++){
 			for(int j = 1; j < N; j++){
 				for(int k = 1; k < N; k++){
@@ -611,7 +762,7 @@ int main(int argc, char* argv[])
 	std::cout << "Writing to file\n";
 	/*	Data file output	*/
 	datafile.open(filename, std::ofstream::app);
-	datafile << "# X	Y	Z	V\n";
+	datafile << "\n# X	Y	Z	V\n";
 	for(int i = 0; i < N; i++){
 		for(int j = 0; j < N; j++){
 			for(int k = 0; k < N; k++){
@@ -619,9 +770,8 @@ int main(int argc, char* argv[])
 			}
 		}
 		datafile << "\n";
-	}
+	}}
 	} /* End of STL */
 	/* -------------------------------------------------- */
 	return 0;
 }
-
