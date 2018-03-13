@@ -1,5 +1,5 @@
 /*
- * */
+* */
 
 #include <iostream> /* System IO */
 #include <vector> /* Using vectors instead of arrays */
@@ -26,12 +26,14 @@ void print_help_text(char* arg){
 		<< "                      2D: Top Right Bottom Left. Default: 0 0 0 0\n"
 		<< "                      3D: Top Right Bottom Left Front Back. Default: 0 0 0 0 0 0\n"
 		<< "  -f,  --filename     Sets the file name. Default: \"data.dat\"\n"
+		<< "  -poi                Point of intrest\n"
 		<< "\n"
 		<< "  STL OBJECT INSERTION\n"
 		<< "    * Starts with \"[\" and ends with \"]\"\n"
 		<< "    * Takes arguments within braces\n"
 		<< "  -t,                 Sets the filename of STL File\n"
 		<< "  -s,                 Sets the scale of the file : 0 < s < 1\n"
+		<< "  -v,                 The voltage of the object\n"
 		<< "  -x, -y, -z          Sets the x, y, and z shift of the object : 0 < x,y,z < 1\n"
 		<< "\n"
 		<< "  STL CUTTING\n"
@@ -55,11 +57,11 @@ int main(int argc, char* argv[])
 {
 	/*	Variable Initialization	*/
 
-	double Top, Right, Bottom, Left, Front, Back, Length, Delta, xcut, ycut, zcut;
+	double Top, Right, Bottom, Left, Front, Back, Length, Delta, xcut, ycut, zcut, pox, poy, poz, maxstep;
 	int N, Num;
 	std::string filename, stlFile;
 	const double pi = 3.14159265359;
-	bool CUBE = 0, EFIELD = 0, STLOBJECT = 0, XCUT = 0, YCUT = 0, ZCUT = 0;
+	bool CUBE = 0, EFIELD = 0, STLOBJECT = 0, XCUT = 0, YCUT = 0, ZCUT = 0, PONTOFINTREST = 0;
 
 	/* Default Values */
 	Top = 0;
@@ -74,6 +76,9 @@ int main(int argc, char* argv[])
 	stlFile = "shape.stl";
 	Length = 1.0;
 	std::vector<STL> objects;
+	pox = 0.5;
+	poy = 0.5;
+	poz = 0.5;
 
 	/*	Argument Handling (Needs Improvemnt)	*/
 	for (int i = 0; i < argc; i++){
@@ -133,6 +138,73 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 		} 
+		else if ( (std::string( argv[i] ) == "-poi"))
+		{
+			PONTOFINTREST = 1;
+			if((not (i + 4 < argc))){
+				std::cout << "Argument, " << argv[i] << ", needs and x, y, z, and tollorance value.\n";
+				print_help_text(argv[0]);
+				return 1;
+			}		
+			if( i + 4 < argc)
+			{
+				try 
+				{
+					pox = std::stod( argv[i + 1], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 1] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				if( not ( pox < 1 ) ){
+					std::cout << "Error: \"" << argv[i + 1] << "\" needs to be less than one\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					poy = std::stod( argv[i + 2], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 2] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				if( not ( poy < 1 ) ){
+					std::cout << "Error: \"" << argv[i + 1] << "\" needs to be less than one\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					poy	= std::stod( argv[i + 3], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 3] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				if( not ( poz < 1 ) ){
+					std::cout << "Error: \"" << argv[i + 1] << "\" needs to be less than one\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+				try 
+				{
+					maxstep = std::stod( argv[i + 4], nullptr );
+				}
+				catch ( const std::invalid_argument& ia)
+				{
+					std::cout << "Error: \"" << argv[i + 4] << "\" is not a number!\n";
+					print_help_text( argv[0] );
+					return 1;
+				}
+			}
+		}
 		else if ( (std::string( argv[i] ) == "-b") || (std::string(argv[i]) == "--boundaries") )
 		{
 			if((not (i + 6 < argc)) && (CUBE)){
@@ -588,6 +660,7 @@ int main(int argc, char* argv[])
 		dx = x_max - x_min;
 		dy = y_max - y_min;
 		dz = z_max - z_min;
+		std::cout << "Dx = " << dz << "\n";
 	
 		if((dx >= dy) & (dx >= dz)){rescale = 1/dx;}
 		else if((dy >= dx) & (dy >= dz)){rescale = 1/dy;}
@@ -596,6 +669,7 @@ int main(int argc, char* argv[])
 		dx = N * dx * rescale * objects[num_object].scale;
 		dy = N * dy * rescale * objects[num_object].scale;
 		dz = N * dz * rescale * objects[num_object].scale;
+		std::cout << "Dz = " << dz << "\n";
 
 		for(unsigned int i = 0; i < numT; i++){
 			for(int j = 0; j < 3; j++){
@@ -736,7 +810,9 @@ int main(int argc, char* argv[])
 	/* Steping Action	*/
 	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
 	std::vector<double_vec_vec> phi_new(phi); /* */
-	for(int count = 0; count < Num; count++){
+	double diff;
+	int count = 0;
+	while ((count < Num) || ((PONTOFINTREST) && (diff > maxstep))){
 		progress = (double(count) + 1) / double(Num);
 		time_elapsed = static_cast<long int>(time(NULL)) - start_time;
 		left_time = ((time_elapsed) / progress) -  time_elapsed;
@@ -756,6 +832,8 @@ int main(int argc, char* argv[])
 		}
 		std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
 		std::cout.flush();
+		diff = std::abs(phi[pox * N][poy * N][poz * N] - phi_new[pox * N][poy * N][poz * N]);
+		count++;
 	}
 	std::cout << "\n";
 
