@@ -1,4 +1,18 @@
-/*
+/*  Poissons-Potential Uses the Poisson's Meathod of estimating electric potential in a region
+    Copyright (C) 2018  Grant Nichol
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 * */
 
 #include <iostream> /* System IO */
@@ -79,6 +93,10 @@ int main(int argc, char* argv[])
 	pox = 0.5;
 	poy = 0.5;
 	poz = 0.5;
+	maxstep = 0.1;
+	zcut = 0.5;
+	ycut = 0.5;
+	xcut = 0.5;
 
 	/*	Argument Handling (Needs Improvemnt)	*/
 	for (int i = 0; i < argc; i++){
@@ -180,7 +198,7 @@ int main(int argc, char* argv[])
 				}
 				try 
 				{
-					poy	= std::stod( argv[i + 3], nullptr );
+					poz	= std::stod( argv[i + 3], nullptr );
 				}
 				catch ( const std::invalid_argument& ia)
 				{
@@ -644,7 +662,7 @@ int main(int argc, char* argv[])
         file.close();
 		std::cout << "Finished reading STL\n";
 
-		double x_max, x_min, y_max, y_min, z_max, z_min = 0;
+		double x_max = 0, x_min = 0, y_max = 0, y_min = 0, z_max = 0, z_min = 0;
 		for(unsigned int i = 0; i < numT; i++){
 			for(int j = 0; j < 3; j++){
 				if(triangles[i][j][0] <= x_min){x_min = triangles[i][j][0];}
@@ -810,9 +828,9 @@ int main(int argc, char* argv[])
 	/* Steping Action	*/
 	const double omega = 2 / (1 + pi / N*N);	/* Used as a relaxation constant: N^2 instead of N : Found it works better */
 	std::vector<double_vec_vec> phi_new(phi); /* */
-	double diff;
+	double diff = 1, diffdiff = 1, adiff = 1;
 	int count = 0;
-	while ((count < Num) || ((PONTOFINTREST) && (diff > maxstep))){
+	while ((count < Num) || ((PONTOFINTREST) && (diffdiff > maxstep))){
 		progress = (double(count) + 1) / double(Num);
 		time_elapsed = static_cast<long int>(time(NULL)) - start_time;
 		left_time = ((time_elapsed) / progress) -  time_elapsed;
@@ -821,7 +839,7 @@ int main(int argc, char* argv[])
 		minutes = (hours - static_cast<double>(lhours)) * 60;
 		lminutes = minutes;
 		lseconds = (minutes - static_cast<double>(lminutes)) * 60;
-		std::cout << (progress * 100) << " % " << " | Time left: " << lhours << "h " << lminutes << "m " << lseconds << "s                                \r";
+		std::cout << (progress * 100) << " %      " << "		| Time left: " << lhours << "h " << lminutes << "m " << lseconds << "s		" << "|| diff = " << diffdiff << "									\r";
 		for(int i = 1; i < N; i++){
 			for(int j = 1; j < N; j++){
 				for(int k = 1; k < N; k++){
@@ -832,7 +850,9 @@ int main(int argc, char* argv[])
 		}
 		std::swap(phi, phi_new); /* Using swap which is faster than reassigning values again */
 		std::cout.flush();
+		adiff = diff;
 		diff = std::abs(phi[pox * N][poy * N][poz * N] - phi_new[pox * N][poy * N][poz * N]);
+		diffdiff = std::abs(adiff - diff);
 		count++;
 	}
 	std::cout << "\n";
